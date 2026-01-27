@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: tests/buildingid/test_code_area.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #

@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: tests/buildingid/test_csv.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -10,6 +7,7 @@ import io
 import re
 import unittest
 
+import pytest
 from openlocationcode import openlocationcode
 
 from buildingid.command_line.dict_decoders import LatLngDictDecoder, WKBDictDecoder, WKTDictDecoder
@@ -32,14 +30,14 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotFoundError, re.escape("field 'Latitude' is not defined")):
+        with pytest.raises(FieldNotFoundError, match=re.escape("field 'Latitude' is not defined")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("Latitude,x")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotFoundError, re.escape("field 'Longitude' is not defined")):
+        with pytest.raises(FieldNotFoundError, match=re.escape("field 'Longitude' is not defined")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_WKBDictDecoder_FieldNotFoundError(self):
@@ -55,7 +53,7 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotFoundError, re.escape("field 'WKB' is not defined")):
+        with pytest.raises(FieldNotFoundError, match=re.escape("field 'WKB' is not defined")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_WKTDictDecoder_FieldNotFoundError(self):
@@ -71,7 +69,7 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotFoundError, re.escape("field 'WKT' is not defined")):
+        with pytest.raises(FieldNotFoundError, match=re.escape("field 'WKT' is not defined")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_LatLngDictDecoder_FieldNotUniqueError(self):
@@ -87,21 +85,21 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("Latitude,Longitude,UBID_Error_Name")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Name' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Name' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("Latitude,Longitude,UBID_Error_Message")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Message' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Message' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_WKBDictDecoder_FieldNotUniqueError(self):
@@ -117,21 +115,21 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("WKB,UBID_Error_Name")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Name' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Name' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("WKB,UBID_Error_Message")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Message' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Message' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_WKTDictDecoder_FieldNotUniqueError(self):
@@ -147,21 +145,21 @@ class TestCSV(unittest.TestCase):
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("WKT,UBID_Error_Name")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Name' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Name' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
         io_in = io.StringIO("WKT,UBID_Error_Message")
         io_out = io.StringIO("")
         io_err = io.StringIO("")
 
-        with self.assertRaisesRegex(FieldNotUniqueError, re.escape("field 'UBID_Error_Message' has already been taken")):
+        with pytest.raises(FieldNotUniqueError, match=re.escape("field 'UBID_Error_Message' has already been taken")):
             dict_pipe.run(io_in, io_out, io_err, args_in=[], kwargs_in={}, args_out=[], kwargs_out={})
 
     def test_buildingid_csv_DictPipe_LatLngDictDecoder(self):
@@ -224,7 +222,8 @@ class TestCSV(unittest.TestCase):
         self.assertEqual("WKB\r\nx\r\n", io_in.getvalue())
         self.assertEqual("", io_out.getvalue())
         self.assertEqual(
-            "WKB,UBID_Error_Name,UBID_Error_Message\r\nx,GEOSException,ParseException: Unexpected EOF parsing WKB\r\n", io_err.getvalue()
+            "WKB,UBID_Error_Name,UBID_Error_Message\r\nx,GEOSException,ParseException: Unexpected EOF parsing WKB\r\n",
+            io_err.getvalue(),
         )
 
     def test_buildingid_csv_DictPipe_WKTDictDecoder(self):
@@ -255,7 +254,8 @@ class TestCSV(unittest.TestCase):
         self.assertEqual("WKT\r\nx\r\n", io_in.getvalue())
         self.assertEqual("", io_out.getvalue())
         self.assertEqual(
-            "WKT,UBID_Error_Name,UBID_Error_Message\r\nx,GEOSException,ParseException: Unknown type: 'X'\r\n", io_err.getvalue()
+            "WKT,UBID_Error_Name,UBID_Error_Message\r\nx,GEOSException,ParseException: Unknown type: 'X'\r\n",
+            io_err.getvalue(),
         )
 
 

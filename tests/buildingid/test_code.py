@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: tests/buildingid/test_code.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -8,6 +5,7 @@
 
 import unittest
 
+import pytest
 import shapely.wkt
 from openlocationcode import openlocationcode
 
@@ -16,10 +14,10 @@ from buildingid.code import RE_PATTERN_, decode, encode, isValid
 
 class TestCode(unittest.TestCase):
     def test_buildingid_code_decode(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             decode(None)
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             decode("")
 
         # # TODO

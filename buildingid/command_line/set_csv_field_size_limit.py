@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: buildingid/command_line/set_csv_field_size_limit.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #

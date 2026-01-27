@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: tests/__init__.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #

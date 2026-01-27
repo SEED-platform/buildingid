@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: buildingid/code.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -10,7 +7,7 @@ import typing
 
 from openlocationcode import openlocationcode
 
-from .code_pattern import (
+from buildingid.code_pattern import (
     FORMAT_STRING_,
     RE_GROUP_EAST_,
     RE_GROUP_NORTH_,
@@ -19,7 +16,14 @@ from .code_pattern import (
     RE_GROUP_WEST_,
     RE_PATTERN_,
 )
-from .validators import isValidCodeArea, isValidCodeLength, isValidLatitude, isValidLatitudeCenter, isValidLongitude, isValidLongitudeCenter
+from buildingid.validators import (
+    isValidCodeArea,
+    isValidCodeLength,
+    isValidLatitude,
+    isValidLatitudeCenter,
+    isValidLongitude,
+    isValidLongitudeCenter,
+)
 
 Code = typing.NewType("Code", str)
 
@@ -48,7 +52,7 @@ class CodeArea(openlocationcode.CodeArea):
             codeLength=self.codeLength,
         )
 
-    def intersection(self, other: "CodeArea") -> typing.Optional[typing.Tuple[float, float, float, float]]:
+    def intersection(self, other: "CodeArea") -> tuple[float, float, float, float] | None:
         if other is None:
             return None
 
@@ -67,7 +71,7 @@ class CodeArea(openlocationcode.CodeArea):
             latitudeHi,
         )
 
-    def jaccard(self, other: "CodeArea") -> typing.Optional[float]:
+    def jaccard(self, other: "CodeArea") -> float | None:
         bbox = self.intersection(other)
 
         if bbox is None:
@@ -167,7 +171,7 @@ def isValid(code: Code) -> bool:
     return isValid_(code) is not None
 
 
-def isValid_(code: Code) -> typing.Optional[typing.Match[str]]:
+def isValid_(code: Code) -> typing.Match[str] | None:
     if code is None:
         return None
 

@@ -1,6 +1,3 @@
-#
-# pnnl-buildingid: buildingid/command_line/dict_pipe.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -10,42 +7,42 @@ import abc
 import csv
 import typing
 
-from .exceptions import FieldNotFoundError, FieldNotUniqueError
+from buildingid.command_line.exceptions import FieldNotFoundError, FieldNotUniqueError
 
 T = typing.TypeVar("T")
 
 
 class DictDecoder(abc.ABC, typing.Generic[T]):
     def __init__(self) -> None:
-        super(DictDecoder, self).__init__()
+        super().__init__()
 
     @abc.abstractmethod
-    def decode(self, row: typing.Dict[str, str]) -> T:
-        raise MethodNotImplemented()  # pragma: no cover
+    def decode(self, row: dict[str, str]) -> T:
+        raise NotImplementedError()  # pragma: no cover
 
     @property
     @abc.abstractmethod
-    def fieldnames(self) -> typing.List[str]:
-        raise MethodNotImplemented()  # pragma: no cover
+    def fieldnames(self) -> list[str]:
+        raise NotImplementedError()  # pragma: no cover
 
 
 class DictEncoder(abc.ABC, typing.Generic[T]):
     def __init__(self) -> None:
-        super(DictEncoder, self).__init__()
+        super().__init__()
 
     @abc.abstractmethod
-    def encode(self, inst: T) -> typing.Dict[str, typing.Any]:
-        raise MethodNotImplemented()  # pragma: no cover
+    def encode(self, inst: T) -> dict[str, typing.Any]:
+        raise NotImplementedError()  # pragma: no cover
 
     @property
     @abc.abstractmethod
-    def fieldnames(self) -> typing.List[str]:
-        raise MethodNotImplemented()  # pragma: no cover
+    def fieldnames(self) -> list[str]:
+        raise NotImplementedError()  # pragma: no cover
 
 
 class DictPipe:
     def __init__(self, decoder_in: DictDecoder[T], encoder_out: DictEncoder[T], encoder_err: DictEncoder[BaseException]) -> None:
-        super(DictPipe, self).__init__()
+        super().__init__()
 
         self.decoder_in = decoder_in
         self.encoder_out = encoder_out

@@ -11,23 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.x"
-      - name: Install pypa/build
-        run: >-
-          python3 -m
-          pip install
-          build
-          --user
+          version: "0.9.27"
       - name: Build a binary wheel and a source tarball
-        run: python3 -m build
+        run: uv build
       - name: Store the distribution packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-package-distributions
           path: dist/
@@ -40,13 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi_release
-      url: https://pypi.org/p/buildingid-nrel/
+      url: https://pypi.org/p/buildingid/
     permissions:
       id-token: write # IMPORTANT: mandatory for trusted publishing
 
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/

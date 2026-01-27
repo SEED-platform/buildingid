@@ -1,32 +1,29 @@
-#
-# pnnl-buildingid: buildingid/command_line/__init__.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
 # See LICENSE.txt and WARRANTY.txt for details.
 
-# import csv
+import importlib.metadata
 import logging
 import typing
 
 import click
 import click_log
-import pandas
+import pandas as pd
 import pyqtree
 from tqdm import tqdm
 
+from buildingid.code import Code, CodeArea, decode
+from buildingid.command_line.dict_decoders import LatLngDictDecoder, WKBDictDecoder, WKTDictDecoder
+from buildingid.command_line.dict_encoders import BaseGeometryDictEncoder, ErrorDictEncoder
+from buildingid.command_line.dict_pipe import DictDecoder, DictPipe
+from buildingid.command_line.exceptions import CustomError, FieldNotFoundError, FieldNotUniqueError
+from buildingid.command_line.set_csv_field_size_limit import set_csv_field_size_limit
+from buildingid.validators import isValidCodeLength
+
 tqdm.pandas()
 
-from ..code import Code, CodeArea, decode
-from ..validators import isValidCodeLength
-from ..version import __version__
-from .dict_decoders import LatLngDictDecoder, WKBDictDecoder, WKTDictDecoder
-from .dict_encoders import BaseGeometryDictEncoder, ErrorDictEncoder
-from .dict_pipe import DictPipe
-from .exceptions import CustomException, FieldNotFoundError, FieldNotUniqueError
-from .set_csv_field_size_limit import set_csv_field_size_limit
-
+VERSION = importlib.metadata.version("buildingid")
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -47,18 +44,14 @@ def click_callback_code_length_(ctx: None, opt: click.core.Option, codeLength: i
         raise click.BadParameter(f"Invalid Open Location Code length: {codeLength!s}")
 
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.pass_context
-@click.version_option(__version__)
+@click.version_option(VERSION)
 def cli(ctx: None) -> None:
-    """Unique Building Identifier (UBID) Software – Beta Source Code (Battelle IPID 31307-E)
+    """Unique Building Identifier (UBID) Software (Battelle IPID 31307-E)
 
-    This Beta version of the Software is provided to you for evaluation and
-    suggested improvements.  Battelle plans to release the Software to the
-    public as open source software under an Open Source Initiative-approved open
-    source license.  The public version will be available on the PNNL GitHub
-    page https://github.com/pnnl and through the US DOE Office of Scientific and
-    Technical Information DOE Code site at https://www.osti.gov/doecode/.
+    Unique Building Identifier (UBID) pinpoints the exact physical location and extent of space that a building occupies.
+    These details make it possible to gather and study accurate, reliable information about a building and its spatial characteristics.
     """
 
 
@@ -129,7 +122,11 @@ def cli(ctx: None) -> None:
     help="the name of the well-known text (WKT) string field in the input file",
 )
 @click.option(
-    "--fieldname-code", type=click.STRING, default="UBID", show_default=True, help="the name of the UBID field in the output file"
+    "--fieldname-code",
+    type=click.STRING,
+    default="UBID",
+    show_default=True,
+    help="the name of the UBID field in the output file",
 )
 @click.option("--reader-delimiter", type=click.STRING, default=",", show_default=True, help="the delimiter to use for the input file")
 @click.option(
@@ -186,6 +183,7 @@ def run_append_to_csv(
     """
 
     # Construct `DictDecoder[DictDatum]` for standard input stream.
+    decoder_in: DictDecoder
     if dict_decoder_id == "latlng":
         decoder_in = LatLngDictDecoder(
             fieldname_center_latitude,
@@ -217,14 +215,14 @@ def run_append_to_csv(
     io_err = click.get_text_stream("stderr")
 
     # Configuration for `csv.DictReader`.
-    args_in = []
+    args_in: list = []
     kwargs_in = {
         "delimiter": reader_delimiter,
         "quotechar": reader_quotechar,
     }
 
     # Configuration for `csv.DictWriter`.
-    args_out = []
+    args_out: list = []
     kwargs_out = {
         "delimiter": writer_delimiter,
         "quotechar": writer_quotechar,
@@ -233,7 +231,7 @@ def run_append_to_csv(
 
     try:
         dict_pipe.run(io_in, io_out, io_err, args_in=args_in, kwargs_in=kwargs_in, args_out=args_out, kwargs_out=kwargs_out)
-    except CustomException as exception:
+    except CustomError as exception:
         raise click.ClickException(exception)
 
     # Done!
@@ -259,10 +257,16 @@ def run_append_to_csv(
 )
 @click.option("--include-index-fields", is_flag=True, default=False, show_default=True, help="include the index field in the output file")
 @click.option(
-    "--include-left-field", type=click.STRING, multiple=True, help="include the named field of the left input file in the output file"
+    "--include-left-field",
+    type=click.STRING,
+    multiple=True,
+    help="include the named field of the left input file in the output file",
 )
 @click.option(
-    "--include-right-field", type=click.STRING, multiple=True, help="include the named field of the right input file in the output file"
+    "--include-right-field",
+    type=click.STRING,
+    multiple=True,
+    help="include the named field of the right input file in the output file",
 )
 @click.option(
     "--jaccard-min",
@@ -321,7 +325,11 @@ def run_append_to_csv(
     help="the sort order for the groups of rows of the right input file",
 )
 @click.option(
-    "--left-fieldname-code", type=click.STRING, default="UBID", show_default=True, help="the name of the UBID field in the left input file"
+    "--left-fieldname-code",
+    type=click.STRING,
+    default="UBID",
+    show_default=True,
+    help="the name of the UBID field in the left input file",
 )
 @click.option(
     "--left-fieldname-index",
@@ -339,7 +347,11 @@ def run_append_to_csv(
 )
 @click.option("--left-suffix", type=click.STRING, default="_x", show_default=True, help="the suffix for field names in the left input file")
 @click.option(
-    "--left-reader-delimiter", type=click.STRING, default=",", show_default=True, help="the delimiter to use for the left input file"
+    "--left-reader-delimiter",
+    type=click.STRING,
+    default=",",
+    show_default=True,
+    help="the delimiter to use for the left input file",
 )
 @click.option(
     "--left-reader-quotechar",
@@ -370,10 +382,18 @@ def run_append_to_csv(
     help="the name of the temporary field for decoded UBID strings in the right input file",
 )
 @click.option(
-    "--right-suffix", type=click.STRING, default="_y", show_default=True, help="the suffix for field names in the right input file"
+    "--right-suffix",
+    type=click.STRING,
+    default="_y",
+    show_default=True,
+    help="the suffix for field names in the right input file",
 )
 @click.option(
-    "--right-reader-delimiter", type=click.STRING, default=",", show_default=True, help="the delimiter to use for the right input file"
+    "--right-reader-delimiter",
+    type=click.STRING,
+    default=",",
+    show_default=True,
+    help="the delimiter to use for the right input file",
 )
 @click.option(
     "--right-reader-quotechar",
@@ -399,8 +419,8 @@ def run_crossref(
     fieldname_jaccard: str,
     include_jaccard_field: bool,
     include_index_fields: bool,
-    include_left_field: typing.List[str],
-    include_right_field: typing.List[str],
+    include_left_field: list[str],
+    include_right_field: list[str],
     jaccard_min: float,
     jaccard_max: float,
     sort_by_jaccard: bool,
@@ -433,34 +453,28 @@ def run_crossref(
     The \033[1mcrossref\033[0m command exits 0 on success, and >0 if an error occurs.
     """
 
-    # Configuration for `pandas.read_csv` for left input file.
-    kwargs_for_read_csv_left: typing.Dict[str, typing.Any] = {
+    # Configuration for `pd.read_csv` for left input file.
+    kwargs_for_read_csv_left: dict[str, typing.Any] = {
         "dtype": {
             left_fieldname_code: str,
         },
         "quotechar": left_reader_quotechar,
         "sep": left_reader_delimiter,
-        "usecols": [
-            left_fieldname_code,
-        ]
-        + list(include_left_field),
+        "usecols": [left_fieldname_code, *list(include_left_field)],
     }
 
-    # Configuration for `pandas.read_csv` for right input file.
-    kwargs_for_read_csv_right: typing.Dict[str, typing.Any] = {
+    # Configuration for `pd.read_csv` for right input file.
+    kwargs_for_read_csv_right: dict[str, typing.Any] = {
         "dtype": {
             right_fieldname_code: str,
         },
         "quotechar": right_reader_quotechar,
         "sep": right_reader_delimiter,
-        "usecols": [
-            right_fieldname_code,
-        ]
-        + list(include_right_field),
+        "usecols": [right_fieldname_code, *list(include_right_field)],
     }
 
-    # Configuration for `pandas.to_csv` for output file.
-    kwargs_for_to_csv_dst: typing.Dict[str, typing.Any] = {
+    # Configuration for `pd.to_csv` for output file.
+    kwargs_for_to_csv_dst: dict[str, typing.Any] = {
         "quotechar": writer_quotechar,
         # 'quoting': csv.QUOTE_NONNUMERIC,
         "sep": writer_delimiter,
@@ -474,7 +488,7 @@ def run_crossref(
     left_fieldname_openlocationcode_with_suffix: str = f"{left_fieldname_openlocationcode}{left_suffix}"
     right_fieldname_openlocationcode_with_suffix: str = f"{right_fieldname_openlocationcode}{right_suffix}"
 
-    def callback_decode_(code: Code) -> typing.Optional[CodeArea]:
+    def callback_decode_(code: Code) -> CodeArea | None:
         """Return the decoded 'CodeArea' for the given 'Code', or 'None' if an error occurs."""
 
         if code is None:
@@ -490,8 +504,8 @@ def run_crossref(
 
         return codeArea
 
-    def sort_order_to_ascending_(value: str) -> typing.Optional[bool]:
-        """Return the "ascending" argument for the `pandas.DataFrame.sort_values` method."""
+    def sort_order_to_ascending_(value: str) -> bool | None:
+        """Return the "ascending" argument for the `pd.DataFrame.sort_values` method."""
 
         if value == "ASC":
             return True
@@ -501,43 +515,44 @@ def run_crossref(
             return None
 
     try:
-        # Construct 'pandas.DataFrame' for left input file.
+        # Construct 'pd.DataFrame' for left input file.
         #
         # Ensure that "UBID" field is present and that "index" and "__openlocationcode__" fields are not present.
         #
-        # Finally, construct 'pandas.Series' for 'CodeArea' by decoding "UBID" field.
-        logger.info('[crossref] Reading left input file: "{0}"'.format(str(left.name).replace('"', '\\"')))
-        left_data_frame: pandas.DataFrame = pandas.read_csv(filepath_or_buffer=left, **kwargs_for_read_csv_left)
+        # Finally, construct 'pd.Series' for 'CodeArea' by decoding "UBID" field.
+        logger.info(f"[crossref] Reading left input file: {str(left.name)!r}")
+        left_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=left, **kwargs_for_read_csv_left)
         if left_fieldname_code not in left_data_frame:
             raise FieldNotFoundError(left_fieldname_code)
         elif left_fieldname_index_with_suffix in left_data_frame:
             raise FieldNotUniqueError(left_fieldname_index_with_suffix)
         elif left_fieldname_openlocationcode_with_suffix in left_data_frame:
             raise FieldNotUniqueError(left_fieldname_openlocationcode_with_suffix)
-        left_series_codeArea: pandas.Series = left_data_frame[left_fieldname_code].progress_apply(callback_decode_)
+        left_series_codeArea: pd.Series = left_data_frame[left_fieldname_code].progress_apply(callback_decode_)
         logger.info(
-            f"[crossref] Decoded \033[1m{left_series_codeArea.count()}/{len(left_data_frame)} ({round((left_series_codeArea.count() / len(left_data_frame)) * 100, 2)}%)\033[0m rows of left input file"
+            f"[crossref] Decoded \033[1m{left_series_codeArea.count()}/{len(left_data_frame)} ({round((left_series_codeArea.count() / len(left_data_frame)) * 100, 2)}%)\033[0m rows of left input file",
         )
 
-        # Construct 'pandas.DataFrame' for right input file.
+        # Construct 'pd.DataFrame' for right input file.
         #
         # Ensure that "UBID" field is present and that "index" and "__openlocationcode__" fields are not present.
         #
-        # Finally, construct 'pandas.Series' for 'CodeArea' by decoding "UBID" field.
-        logger.info('[crossref] Reading right input file: "{0}"'.format(str(right.name).replace('"', '\\"')))
-        right_data_frame: pandas.DataFrame = pandas.read_csv(filepath_or_buffer=right, **kwargs_for_read_csv_right)
+        # Finally, construct 'pd.Series' for 'CodeArea' by decoding "UBID" field.
+        logger.info(f"[crossref] Reading right input file: {str(right.name)!r}")
+        right_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=right, **kwargs_for_read_csv_right)
         if right_fieldname_code not in right_data_frame:
             raise FieldNotFoundError(right_fieldname_code)
         elif right_fieldname_index_with_suffix in right_data_frame:
             raise FieldNotUniqueError(right_fieldname_index_with_suffix)
         elif right_fieldname_openlocationcode_with_suffix in right_data_frame:
             raise FieldNotUniqueError(right_fieldname_openlocationcode_with_suffix)
-        right_series_codeArea: pandas.Series = right_data_frame[right_fieldname_code].progress_apply(callback_decode_)
+        right_series_codeArea: pd.Series = right_data_frame[right_fieldname_code].progress_apply(callback_decode_)
         logger.info(
-            f"[crossref] Decoded \033[1m{right_series_codeArea.count()}/{len(right_data_frame)} ({round((right_series_codeArea.count() / len(right_data_frame)) * 100, 2)}%)\033[0m rows of right input file"
+            f"[crossref] Decoded \033[1m{right_series_codeArea.count()}/{len(right_data_frame)} ({round((right_series_codeArea.count() / len(right_data_frame)) * 100, 2)}%)\033[0m rows of right input file",
         )
 
         # Construct quadtree-based spatial index.
+        dst_data: list[tuple[int, int, CodeArea, CodeArea]]
         if len(left_series_codeArea) >= len(right_series_codeArea):
             # If left input file has more rows than right input file, then construct
             # spatial index using left input file and cross-reference with rows of
@@ -550,7 +565,7 @@ def run_crossref(
                     left_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeLo).min(),
                     left_series_codeArea.progress_apply(lambda codeArea: codeArea.longitudeHi).max(),
                     left_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeHi).max(),
-                ]
+                ],
             )
             for left_index, left_codeArea in tqdm(left_series_codeArea.items(), total=len(left_series_codeArea)):
                 if left_codeArea is not None:
@@ -560,12 +575,12 @@ def run_crossref(
                     )
 
             logger.info("[crossref] Cross-referencing rows of right input file against quadtree for left input file")
-            dst_data: typing.List[typing.Tuple[int, int, CodeArea, CodeArea]] = [
+            dst_data = [
                 (left_index, right_index, left_codeArea, right_codeArea)
                 for right_index, right_codeArea in tqdm(right_series_codeArea.items(), total=len(right_series_codeArea))
                 if right_codeArea is not None
                 for (left_index, left_codeArea) in left_spindex.intersect(
-                    [right_codeArea.longitudeLo, right_codeArea.latitudeLo, right_codeArea.longitudeHi, right_codeArea.latitudeHi]
+                    [right_codeArea.longitudeLo, right_codeArea.latitudeLo, right_codeArea.longitudeHi, right_codeArea.latitudeHi],
                 )
                 if left_codeArea is not None
             ]
@@ -581,7 +596,7 @@ def run_crossref(
                     right_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeLo).min(),
                     right_series_codeArea.progress_apply(lambda codeArea: codeArea.longitudeHi).max(),
                     right_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeHi).max(),
-                ]
+                ],
             )
             for right_index, right_codeArea in tqdm(right_series_codeArea.items(), total=len(right_series_codeArea)):
                 if right_codeArea is not None:
@@ -591,18 +606,18 @@ def run_crossref(
                     )
 
             logger.info("[crossref] Cross-referencing rows of left input file against quadtree for right input file")
-            dst_data: typing.List[typing.Tuple[int, int, CodeArea, CodeArea]] = [
+            dst_data = [
                 (left_index, right_index, left_codeArea, right_codeArea)
                 for left_index, left_codeArea in tqdm(left_series_codeArea.items(), total=len(left_series_codeArea))
                 if left_codeArea is not None
                 for (right_index, right_codeArea) in right_spindex.intersect(
-                    [left_codeArea.longitudeLo, left_codeArea.latitudeLo, left_codeArea.longitudeHi, left_codeArea.latitudeHi]
+                    [left_codeArea.longitudeLo, left_codeArea.latitudeLo, left_codeArea.longitudeHi, left_codeArea.latitudeHi],
                 )
                 if right_codeArea is not None
             ]
 
-        # Construct 'pandas.DataFrame' for cross-reference results (viz., "intersections").
-        dst_data_frame: pandas.DataFrame = pandas.DataFrame(
+        # Construct 'pd.DataFrame' for cross-reference results (viz., "intersections").
+        dst_data_frame: pd.DataFrame = pd.DataFrame(
             data=dst_data,
             columns=[
                 left_fieldname_index_with_suffix,
@@ -614,28 +629,23 @@ def run_crossref(
 
         # If there are no cross-reference results, then exit.
         len_dst_data_frame0: int = len(dst_data_frame)
-        logger.info(
-            "[crossref] Found \033[1m{0}\033[0m intersection{1}".format(len_dst_data_frame0, "" if len_dst_data_frame0 == 1 else "s")
-        )
+        logger.info(f"[crossref] Found \033[1m{len_dst_data_frame0}\033[0m intersection{'' if len_dst_data_frame0 == 1 else 's'}")
         if len_dst_data_frame0 == 0:
             return
 
         # Calculate Jaccard similarity coefficient (viz., "intersection over union", "IoU", etc.) for each cross-reference result.
-        logger.info('[crossref] Calculating field: "{0}"'.format(fieldname_jaccard.replace('"', '\\"')))
+        logger.info(f"[crossref] Calculating field: {fieldname_jaccard!r}")
         if fieldname_jaccard in dst_data_frame:
             raise FieldNotUniqueError(fieldname_jaccard)
         dst_data_frame[fieldname_jaccard] = dst_data_frame.progress_apply(
-            lambda row: row[left_fieldname_openlocationcode_with_suffix].jaccard(row[right_fieldname_openlocationcode_with_suffix]), axis=1
+            lambda row: row[left_fieldname_openlocationcode_with_suffix].jaccard(row[right_fieldname_openlocationcode_with_suffix]),
+            axis=1,
         )
 
         # Select cross-reference results within the specified open interval.
-        logger.info(
-            '[crossref] Filtering intersections: {1} <= "{0}" <= {2}'.format(
-                fieldname_jaccard.replace('"', '\\"'), jaccard_min, jaccard_max
-            )
-        )
-        dst_data_frame: pandas.DataFrame = dst_data_frame[
-            dst_data_frame[fieldname_jaccard].notnull()
+        logger.info(f"[crossref] Filtering intersections: {jaccard_min} <= {fieldname_jaccard!r} <= {jaccard_max}")
+        dst_data_frame = dst_data_frame[
+            dst_data_frame[fieldname_jaccard].notna()
             & (jaccard_min <= dst_data_frame[fieldname_jaccard])
             & (dst_data_frame[fieldname_jaccard] <= jaccard_max)
         ]
@@ -643,20 +653,14 @@ def run_crossref(
         # If there are no cross-reference results, then exit.
         len_dst_data_frame1: int = len(dst_data_frame)
         logger.info(
-            '[crossref] Found \033[1m{0}/{1} ({2}%)\033[0m intersection{3}: "{4}"'.format(
-                len_dst_data_frame1,
-                len_dst_data_frame0,
-                round((len_dst_data_frame1 / len_dst_data_frame0) * 100, 2),
-                "" if len_dst_data_frame0 == 1 else "s",
-                fieldname_jaccard.replace('"', '\\"'),
-            )
+            f"[crossref] Found \033[1m{len_dst_data_frame1}/{len_dst_data_frame0} ({round((len_dst_data_frame1 / len_dst_data_frame0) * 100, 2)}%)\033[0m intersection{'' if len_dst_data_frame0 == 1 else 's'}: {fieldname_jaccard!r}",
         )
         if len_dst_data_frame1 == 0:
             return
 
         # Merge left and right input files with cross-reference results using an inner join.
         logger.info("[crossref] Merging intersections with left input file")
-        dst_data_frame: pandas.DataFrame = dst_data_frame.merge(
+        dst_data_frame = dst_data_frame.merge(
             left_data_frame.reset_index().rename(
                 index=str,
                 columns={
@@ -669,7 +673,7 @@ def run_crossref(
             suffixes=(False, False),
         )
         logger.info("[crossref] Merging intersections with right input file")
-        dst_data_frame: pandas.DataFrame = dst_data_frame.merge(
+        dst_data_frame = dst_data_frame.merge(
             right_data_frame.reset_index().rename(
                 index=str,
                 columns={
@@ -684,30 +688,30 @@ def run_crossref(
 
         # Sort cross-reference results by Jaccard similarity coefficient.
         if sort_by_jaccard:
-            logger.info('[crossref] Sorting: "{0}" {1}'.format(fieldname_jaccard.replace('"', '\\"'), sort_order))
-            dst_data_frame.sort_values(fieldname_jaccard, axis=0, ascending=sort_order_to_ascending_(sort_order), inplace=True)
+            logger.info(f"[crossref] Sorting: {fieldname_jaccard!r} {sort_order}")
+            dst_data_frame = dst_data_frame.sort_values(fieldname_jaccard, axis=0, ascending=sort_order_to_ascending_(sort_order))
 
         # Group cross-reference results by left "index" and then, for each group,
         # select cross-reference result with least ("ASC") or greatest ("DESC") value.
         if left_group_by_jaccard:
-            logger.info('[crossref] Grouping on left: "{0}" {1}'.format(fieldname_jaccard.replace('"', '\\"'), left_group_order))
-            left_group_by_series: pandas.Series = dst_data_frame.groupby([left_fieldname_index_with_suffix])[fieldname_jaccard]
+            logger.info(f"[crossref] Grouping on left: {fieldname_jaccard!r} {left_group_order}")
+            left_group_by_series: pd.Series = dst_data_frame.groupby([left_fieldname_index_with_suffix])[fieldname_jaccard]
             if left_group_order == "ASC":
-                dst_data_frame: pandas.DataFrame = dst_data_frame.loc[left_group_by_series.idxmin()]
+                dst_data_frame = dst_data_frame.loc[left_group_by_series.idxmin()]
             elif left_group_order == "DESC":
-                dst_data_frame: pandas.DataFrame = dst_data_frame.loc[left_group_by_series.idxmax()]
+                dst_data_frame = dst_data_frame.loc[left_group_by_series.idxmax()]
             else:
                 pass
 
         # Group cross-reference results by right "index" and then, for each group,
         # select cross-reference result with least ("ASC") or greatest ("DESC") value.
         if right_group_by_jaccard:
-            logger.info('[crossref] Grouping on right: "{0}" {1}'.format(fieldname_jaccard.replace('"', '\\"'), right_group_order))
-            right_group_by_series: pandas.Series = dst_data_frame.groupby([right_fieldname_index_with_suffix])[fieldname_jaccard]
+            logger.info(f"[crossref] Grouping on right: {fieldname_jaccard!r} {right_group_order}")
+            right_group_by_series: pd.Series = dst_data_frame.groupby([right_fieldname_index_with_suffix])[fieldname_jaccard]
             if right_group_order == "ASC":
-                dst_data_frame: pandas.DataFrame = dst_data_frame.loc[right_group_by_series.idxmin()]
+                dst_data_frame = dst_data_frame.loc[right_group_by_series.idxmin()]
             elif right_group_order == "DESC":
-                dst_data_frame: pandas.DataFrame = dst_data_frame.loc[right_group_by_series.idxmax()]
+                dst_data_frame = dst_data_frame.loc[right_group_by_series.idxmax()]
             else:
                 pass
 
@@ -725,7 +729,7 @@ def run_crossref(
             del dst_data_frame[right_fieldname_index_with_suffix]
 
         # Write output file.
-        logger.info('[crossref] Writing output file: "{0}"'.format(str(dst.name).replace('"', '\\"')))
+        logger.info(f"[crossref] Writing output file: {str(dst.name)!r}")
         dst_data_frame.to_csv(path_or_buf=dst, header=True, index=False, **kwargs_for_to_csv_dst)
     except BaseException as exception:
         raise click.ClickException(exception)

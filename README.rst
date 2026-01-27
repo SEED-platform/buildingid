@@ -6,7 +6,7 @@ Unique Building Identifier (UBID)
    :target: https://github.com/SEED-platform/buildingid/actions/workflows/test.yml
    :alt: Build Status
 
-**Website:** https://buildingid.pnnl.gov/
+**Website:** https://www.pnnl.gov/unique-building-identification
 
 -------------
 Documentation
@@ -18,34 +18,18 @@ Install
 To complete this guide, `Git <https://git-scm.com/>`_ and `Python 3 <https://www.python.org/>`_ are required.
 Dependencies are automatically installed using `pip <https://pypi.python.org/pypi/pip>`_.
 
-Clone the repository, and then install the ``pnnl-buildingid`` package:
+Clone the repository, and then install the ``buildingid`` package:
 
 ::
 
-  git clone https://github.com/pnnl/buildingid-py
-  cd buildingid-py
-  pip3 install -e .[dev]
-
-Verify the location of the ``buildingid`` command:
-
-::
-
-  which buildingid
-  #=> /usr/local/bin/buildingid
-
-Uninstall
-=========
-
-Use `pip <https://pypi.python.org/pypi/pip>`_ to remove the ``pnnl-buildingid`` package:
-
-::
-
-  pip3 uninstall pnnl-buildingid
+  git clone git@github.com:SEED-platform/buildingid.git
+  cd buildingid
+  uv sync
 
 Test
 ====
 
-Test the ``pnnl-buildingid`` package using the `pytest <https://docs.pytest.org/>`_ package:
+Test the ``buildingid`` package using the `pytest <https://docs.pytest.org/>`_ package:
 
 ::
 
@@ -61,7 +45,7 @@ Coverage testing is enabled using the `pytest-cov <https://pytest-cov.readthedoc
 Usage
 =====
 
-The ``pnnl-buildingid`` package supports two usages:
+The ``buildingid`` package supports two usages:
 
 * Application programming interface (API)
 * Command-line interface (CLI; the ``buildingid`` command)
