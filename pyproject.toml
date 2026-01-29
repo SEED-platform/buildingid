@@ -1,53 +1,58 @@
 [build-system]
-requires = ["poetry-core>=2.0.1"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"
 
-[tool.poetry]
-name = "buildingid-nrel"
-version = "2.2.0"
+[project]
+name = "buildingid"
+version = "2.3.0"
 description = "Unique Building Identifier (UBID)"
 readme = "README.rst"
 authors = [
-    "Mark Borkum <mark.borkum@pnnl.gov>",
-    "Nicholas Long <nicholas.long@nrel.gov>",
-    "Katherine Fleming <katherine.fleming@nrel.gov>",
-    ]
+    { name = "Mark Borkum", email = "mark.borkum@pnnl.gov" },
+    { name = "Nicholas Long", email = "nicholas.long@nlr.gov" },
+    { name = "Katherine Fleming", email = "katherine.fleming@nlr.gov" },
+    { name = "Alex Swindler", email = "alex.swindler@nlr.gov" },
+]
 license = "BSD-2-Clause"
-homepage = "https://github.com/SEED-platform/buildingid-nrel"
-repository = "https://github.com/SEED-platform/buildingid-nrel"
+license-files = ["LICENSE.txt"]
+homepage = "https://github.com/SEED-platform/buildingid"
+repository = "https://github.com/SEED-platform/buildingid"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: GIS",
-    "License :: OSI Approved :: BSD License",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.3.0",
+    "click-log>=0.4.0",
+    "openlocationcode>=1.0.0",
+    "pandas>=3.0.0",
+    "pyqtree>=1.0.0",
+    "shapely>=2.0.0",
+    "tldm==1.1.0",
 ]
 
-packages = [
-    { include = "buildingid" },
+[dependency-groups]
+dev = [
+    "pre-commit>=4.5.0",
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.14"
-click = "<8.2"
-click_log = "^0.4.0"
-openlocationcode = "^1.0"
-pandas = ">=2.2.2,<3"
-pyqtree = "^1.0"
-shapely = "<2.1"
-tqdm = "^4.67"
-
-[tool.poetry.group.dev.dependencies]
-check-manifest = "^0.50.0"
-coverage = "^7.10"
-pytest = "^8.4"
-pytest-cov = "^7.0.0"
-pre-commit = "^4.3"
-mypy = "^1.17"
-
-[tool.poetry.scripts]
+[project.scripts]
 buildingid = "buildingid.command_line:cli"
+
+[tool.pytest.ini_options]
+addopts = ["--cov=buildingid", "--cov-report=html"]
+
+[tool.uv.build-backend]
+module-root = ""
+source-include = ["WARRANTY.txt"]

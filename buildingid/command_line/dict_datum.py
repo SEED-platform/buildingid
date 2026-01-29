@@ -1,27 +1,23 @@
-#
-# pnnl-buildingid: buildingid/command_line/dict_datum.py
-#
 # Copyright (c) 2019, Battelle Memorial Institute
 # All rights reserved.
 #
 # See LICENSE.txt and WARRANTY.txt for details.
 
-import typing
 
 import shapely.geometry.base
 import shapely.geometry.point
 
-from ..code import Code, encode
+from buildingid.code import Code, encode
 
 
 class DictDatum:
     def __init__(
         self,
         geom: shapely.geometry.base.BaseGeometry,
-        bounds: typing.Tuple[float, float, float, float] = None,
-        centroid: shapely.geometry.point.Point = None,
+        bounds: tuple[float, float, float, float] | None = None,
+        centroid: shapely.geometry.point.Point | None = None,
     ) -> None:
-        super(DictDatum, self).__init__()
+        super().__init__()
 
         self.geom = geom
 
@@ -29,7 +25,7 @@ class DictDatum:
         self._centroid = centroid
 
     @property
-    def bounds(self) -> typing.Tuple[float, float, float, float]:
+    def bounds(self) -> tuple[float, float, float, float]:
         if self._bounds is None:
             return self.geom.bounds
         else:
