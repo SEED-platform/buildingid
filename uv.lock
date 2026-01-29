@@ -21,7 +21,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pyqtree" },
     { name = "shapely" },
-    { name = "tqdm" },
+    { name = "tldm" },
 ]
 
 [package.dev-dependencies]
@@ -39,7 +39,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=3.0.0" },
     { name = "pyqtree", specifier = ">=1.0.0" },
     { name = "shapely", specifier = ">=2.0.0" },
-    { name = "tqdm", specifier = ">=4.67.0" },
+    { name = "tldm", specifier = "==1.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -597,6 +597,19 @@ wheels = [
 ]
 
 [[package]]
+name = "tldm"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+    { name = "wcwidth" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/2a/038983f98ebf77729e7a3956a01587122678b633df63ee846c2ce4ca5e03/tldm-1.1.0.tar.gz", hash = "sha256:65feba38902db7f86aaacb49561fc0815d8e6b2871b9cab5e82266ad4c0352c7", size = 150863, upload-time = "2026-01-28T01:23:34.468Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/9b/e7e6895e50865d01db80dca22f492c2be6eb8db0da3c13860af370c60c09/tldm-1.1.0-py3-none-any.whl", hash = "sha256:94619e8aa8dbec10d96d7b043bf6c41b54b7b46f38191abddebeba3900b85bc1", size = 57946, upload-time = "2026-01-28T01:23:37.037Z" },
+]
+
+[[package]]
 name = "tomli"
 version = "2.4.0"
 source = { registry = "https://pypi.org/simple" }
@@ -651,18 +664,6 @@ wheels = [
 ]
 
 [[package]]
-name = "tqdm"
-version = "4.67.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
-]
-
-[[package]]
 name = "tzdata"
 version = "2025.3"
 source = { registry = "https://pypi.org/simple" }
@@ -683,4 +684,13 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/aa/a3/4d310fa5f00863544e1d0f4de93bddec248499ccf97d4791bc3122c9d4f3/virtualenv-20.36.1.tar.gz", hash = "sha256:8befb5c81842c641f8ee658481e42641c68b5eab3521d8e092d18320902466ba", size = 6032239, upload-time = "2026-01-09T18:21:01.296Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/2a/dc2228b2888f51192c7dc766106cd475f1b768c10caaf9727659726f7391/virtualenv-20.36.1-py3-none-any.whl", hash = "sha256:575a8d6b124ef88f6f51d56d656132389f961062a9177016a50e4f507bbcc19f", size = 6008258, upload-time = "2026-01-09T18:20:59.425Z" },
+]
+
+[[package]]
+name = "wcwidth"
+version = "0.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/6e/62daec357285b927e82263a81f3b4c1790215bc77c42530ce4a69d501a43/wcwidth-0.5.0.tar.gz", hash = "sha256:f89c103c949a693bf563377b2153082bf58e309919dfb7f27b04d862a0089333", size = 246585, upload-time = "2026-01-27T01:31:44.942Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/3e/45583b67c2ff08ad5a582d316fcb2f11d6cf0a50c7707ac09d212d25bc98/wcwidth-0.5.0-py3-none-any.whl", hash = "sha256:1efe1361b83b0ff7877b81ba57c8562c99cf812158b778988ce17ec061095695", size = 93772, upload-time = "2026-01-27T01:31:43.432Z" },
 ]

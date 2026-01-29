@@ -37,7 +37,7 @@ dependencies = [
     "pandas>=3.0.0",
     "pyqtree>=1.0.0",
     "shapely>=2.0.0",
-    "tqdm>=4.67.0",
+    "tldm==1.1.0",
 ]
 
 [dependency-groups]
