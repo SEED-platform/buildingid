@@ -8,25 +8,30 @@
 
 ### Install
 
-To complete this guide, [Git](https://git-scm.com/) and [Python 3](https://www.python.org/) are required.
-Dependencies are automatically installed using [pip](https://pypi.python.org/pypi/pip).
+To complete this guide, [Git](https://git-scm.com/) and [uv](https://docs.astral.sh/uv/getting-started/installation/) are required.
+The repository's `.python-version` selects the default development interpreter.
 
 Clone the repository, and then install the `buildingid` package:
 
-    git clone git@github.com:SEED-platform/buildingid.git
-    cd buildingid
-    uv sync
+```bash
+git clone https://github.com/SEED-platform/buildingid.git
+cd buildingid
+uv sync
+```
+
+`uv sync` installs the package, its dependencies, and the development tools into the project's virtual environment.
+Run the following commands from the repository directory using `uv run` to use that environment.
 
 ### Test
 
 Test the `buildingid` package using the [pytest](https://docs.pytest.org/) package:
 
-    pytest tests/
+```bash
+uv run pytest tests/
+```
 
-Coverage testing is enabled using the [pytest-cov](https://pytest-cov.readthedocs.io/) plugin:
-
-    pip3 install pytest-cov
-    pytest --cov=buildingid --cov-report=html tests/
+The [pytest-cov](https://pytest-cov.readthedocs.io/) plugin is installed by `uv sync`.
+Coverage reporting is enabled by default in `pyproject.toml`, with an HTML report written to `htmlcov/index.html`.
 
 ### Usage
 
@@ -40,62 +45,66 @@ The `buildingid` package supports two usages:
 - `buildingid.code`
   - `Code`
   - `CodeArea`
-    - `area() -> float`
+    - `area: float` (property)
     - `encode() -> Code`
-    - `intersection(CodeArea) -> typing.Optional[typing.Tuple[float, float, float, float]]`
-    - `jaccard(CodeArea) -> typing.Optional[float]`
+    - `intersection(other: CodeArea | None) -> tuple[float, float, float, float] | None`
+    - `jaccard(other: CodeArea | None) -> float | None`
     - `resize() -> CodeArea`
-  - `decode(Code) -> CodeArea`
-  - `encode(float, float, float, float, float, float, **kwargs) -> Code`
-  - `isValid(Code) -> bool`
+  - `decode(code: Code | str | None) -> CodeArea`
+  - `encode(latitudeLo: float, longitudeLo: float, latitudeHi: float, longitudeHi: float, latitudeCenter: float, longitudeCenter: float, codeLength: int = 10) -> Code`
+  - `isValid(code: Code | str | None) -> bool`
 
-**Note:** The `Optional` and `Tuple` type hints are provided by the [typing](https://docs.python.org/3/library/typing.html) module.
+`Code` is a `str`-based type representing a UBID.
 
 In the following example, a UBID code is decoded and then re-encoded:
 
-    #!/usr/bin/env python3
-    # -*- coding: utf-8 -*-
+Save the example as `example.py` and run it with `uv run python example.py`.
 
-    import buildingid.code
+```python
+#!/usr/bin/env python3
 
-    if __name__ == '__main__':
-      # Initialize UBID code.
-      orig_code = '849VQJH6+95J-51-58-42-50'
-      print(orig_code)
+import buildingid.code
 
-      # Decode UBID code.
-      orig_code_area = buildingid.code.decode(orig_code)
-      print(orig_code_area)
+if __name__ == "__main__":
+    # Initialize UBID code.
+    orig_code = "849VQJH6+95J-51-58-42-50"
+    print(orig_code)
 
-      # Resize resulting UBID code area.
-      #
-      # The effect of this operation is that the length and width of the UBID code
-      # area are reduced by half an OLC code area.
-      new_code_area = orig_code_area.resize()
-      print(new_code_area)
+    # Decode UBID code.
+    orig_code_area = buildingid.code.decode(orig_code)
+    print(orig_code_area)
 
-      # Encode new UBID code area.
-      new_code = new_code_area.encode()
-      print(new_code)
+    # Inset each edge by half the corresponding OLC cell dimension.
+    # This changes the bounds but preserves the UBID when re-encoded.
+    new_code_area = orig_code_area.resize()
+    print(new_code_area)
 
-      # Test that new UBID code and UBID code area match the originals.
-      assert (orig_code == new_code)
-      assert (orig_code_area == new_code_area)
+    # Encode new UBID code area.
+    new_code = new_code_area.encode()
+    print(new_code)
+
+    # Test that the re-encoded UBID matches the original.
+    assert orig_code == new_code
+```
 
 #### The CLI
 
 View the documentation for the `buildingid` command using the `--help` command-line option:
 
-    buildingid --help
-    #=> Usage: buildingid [OPTIONS] COMMAND [ARGS]...
-    #=> <<more lines of output>>
+```bash
+uv run buildingid --help
+#=> Usage: buildingid [OPTIONS] COMMAND [ARGS]...
+#=> <<more lines of output>>
+```
 
 View the documentation for a sub-command of the `buildingid` command using the `--help` command-line option.
 For example, to view the documentation for the "append2csv" sub-command:
 
-    buildingid append2csv --help
-    #=> Usage: buildingid append2csv [OPTIONS] [latlng|wkb|wkt]
-    #=> <<more lines of output>>
+```bash
+uv run buildingid append2csv --help
+#=> Usage: buildingid [OPTIONS] COMMAND [ARGS]...
+#=> <<more lines of output>>
+```
 
 ##### Commands
 
@@ -112,10 +121,10 @@ Instructions in this section use [Bash](https://www.gnu.org/software/bash/) synt
 
 #### Prerequisites
 
-1. `buildingid` command is installed.
+1. `buildingid` is installed in the project environment (see [Install](#install)).
    - Verify installation:
-     - `buildingid --version`
-       - Expected output: "buildingid, version 2.0.0" (or higher version)
+     - `uv run buildingid --version`
+       - Expected output: `buildingid, version <installed version>`
 
 #### Step-by-step instructions
 
@@ -127,32 +136,32 @@ Instructions in this section use [Bash](https://www.gnu.org/software/bash/) synt
 6. If input CSV file contains latitude and longitude coordinates for a centroid only:
    1. Identify columns of input CSV file that contain latitude and longitude coordinates, e.g., "Latitude" and "Longitude".
    2. Assign UBIDs:
-      - `buildingid append2csv latlng --code-length=11 --fieldname-code="UBID" --fieldname-center-latitude="Latitude" --fieldname-center-longitude="Longitude" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
+      - `uv run buildingid append2csv latlng --code-length=11 --fieldname-code="UBID" --fieldname-center-latitude="Latitude" --fieldname-center-longitude="Longitude" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
 7. If input CSV file contains latitude and longitude coordinates for (i) a centroid and (ii) the northeast and southwest corners of a bounding box:
    1. Identify columns of input CSV file that contain latitude and longitude coordinates, e.g., "Latitude_C", "Longitude_C", "Latitude_N", "Longitude_E", "Latitude_S", and "Longitude_W".
    2. Assign UBIDs:
-      - `buildingid append2csv latlng --code-length=11 --fieldname-code="UBID" --fieldname-center-latitude="Latitude_C" --fieldname-center-longitude="Longitude_C" --fieldname-north-latitude="Latitude_N" --fieldname-east-longitude="Longitude_E" --fieldname-south-latitude="Latitude_S" --fieldname-west-longitude="Longitude_W" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
+      - `uv run buildingid append2csv latlng --code-length=11 --fieldname-code="UBID" --fieldname-center-latitude="Latitude_C" --fieldname-center-longitude="Longitude_C" --fieldname-north-latitude="Latitude_N" --fieldname-east-longitude="Longitude_E" --fieldname-south-latitude="Latitude_S" --fieldname-west-longitude="Longitude_W" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
 8. If input CSV file contains hex-encoded [well-known binary (WKB)](https://www.iso.org/standard/60343.html) strings:
    1. Identify column of input CSV file that contains hex-encoded WKB strings, e.g., "WKB".
    2. Assign UBIDs:
-      - `buildingid append2csv wkb --code-length=11 --fieldname-code="UBID" --fieldname-wkbstr="WKB" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
+      - `uv run buildingid append2csv wkb --code-length=11 --fieldname-code="UBID" --fieldname-wkbstr="WKB" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
 9. If input CSV file contains [well-known text (WKT)](https://www.iso.org/standard/60343.html) strings:
    1. Identify column of input CSV file that contains WKT strings, e.g., "WKT".
    2. Assign UBIDs:
-      - `buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="WKT" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
+      - `uv run buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="WKT" < path/to/in.csv > path/to/out.csv 2> path/to/err.csv`
 
 #### Notes
 
-See `buildingid append2csv --help` for full help.
+See `uv run buildingid append2csv --help` for full help.
 
 ### Cross-reference UBID fields in two CSV files
 
 #### Prerequisites
 
-1. `buildingid` command is installed.
+1. `buildingid` is installed in the project environment (see [Install](#install)).
    - Verify installation:
-     - `buildingid --version`
-       - Expected output: "buildingid, version 2.0.0" (or higher version)
+     - `uv run buildingid --version`
+       - Expected output: `buildingid, version <installed version>`
 
 #### Step-by-step instructions
 
@@ -162,14 +171,17 @@ See `buildingid append2csv --help` for full help.
 4. Identify column of left input CSV file that contains UBID code strings, e.g., "UBID".
 5. Identify column of right input CSV file that contains UBID code strings, e.g., "UBID".
 6. Cross-reference UBIDs:
-   - `buildingid crossref path/to/left.csv path/to/right.csv path/to/out.csv --left-fieldname-code="UBID" --right-fieldname-code="UBID"`
+   - `uv run buildingid crossref path/to/left.csv path/to/right.csv path/to/out.csv --left-fieldname-code="UBID" --right-fieldname-code="UBID"`
 
 #### Notes
 
-See `buildingid crossref --help` for full help.
+See `uv run buildingid crossref --help` for full help.
 
 Default behavior is for output CSV file to be many-to-many (i.e., many records in left input CSV file are cross-referenced with many records in right input CSV file).
-Use `--left-group-by-jaccard` and `--right-group-by-jaccard` options for one-to-many and many-to-one, respectively.
+Use `--left-group-by-jaccard` for many-to-one matching (at most one right match per left row), or `--right-group-by-jaccard` for one-to-many matching (at most one left match per right row).
+
+Grouping selects the lowest Jaccard similarity by default (`ASC`).
+Use `--left-group-order=DESC` or `--right-group-order=DESC`, respectively, to select the highest-similarity match in each group.
 
 Default behavior is for output CSV file to include only columns that contain UBID code strings.
 Use `--include-left-field` and `--include-right-field` options to include other columns.
@@ -178,10 +190,10 @@ Use `--include-left-field` and `--include-right-field` options to include other 
 
 #### Prerequisites
 
-1. [Geospatial Data Abstraction Library (GDAL)](https://www.gdal.org/) is installed.
+1. [Geospatial Data Abstraction Library (GDAL)](https://gdal.org/en/stable/) is installed.
    - Verify installation:
      - `ogr2ogr --version`
-       - Expected output: "GDAL 2.3.1, released 2018/06/22" (version and release date may vary)
+       - Expected output starts with `GDAL` followed by the installed version.
 
 #### Step-by-step instructions
 
@@ -207,25 +219,29 @@ Shapes in input Esri shapefile are converted into elements of "WKT" column of ou
 
 ### Chicago, IL
 
-[The City of Chicago's open data portal](https://data.cityofchicago.org) hosts the ["Building Footprints (current)"](https://data.cityofchicago.org/Buildings/Building-Footprints-current-/hz9b-7nh8) dataset in CSV format; available at: <https://data.cityofchicago.org/api/views/syp8-uezg/rows.csv?accessType=DOWNLOAD>.
+[The City of Chicago's open data portal](https://data.cityofchicago.org) hosts the [Building Footprints](https://data.cityofchicago.org/Buildings/Building-Footprints/syp8-uezg) dataset in CSV format; available at: <https://data.cityofchicago.org/api/views/syp8-uezg/rows.csv?accessType=DOWNLOAD>.
 
 The "the_geom" column of the input CSV file contains WKT strings.
 
 To assign UBIDs to the records in the input CSV file:
 
-1. `buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="the_geom" < rows.csv > rows.out.csv 2> rows.err.csv`
+1. `uv run buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="the_geom" < rows.csv > rows.out.csv 2> rows.err.csv`
 
-### San Jose, CA
+### San Jose, CA (historical example)
 
-The [City of San Jose](http://www.sanjoseca.gov) hosts [datasets](http://www.sanjoseca.gov/index.aspx?NID=3308) that include building footprints and land parcels.
+This example uses a historical `Basemap_2` archive.
+The original city and download links returned HTTP 403 and have been removed.
+File names and coordinate reference systems may differ in current downloads.
 
-The contents of the ["Basemap_2"](http://www.sanjoseca.gov/DocumentCenter/View/44895) zip archive includes a building footprints dataset in Esri shapefile format.
-The coordinate system is [NAD 1983 StatePlane California III FIPS 0403 Feet](http://www.spatialreference.org/ref/esri/102643/).
+The City of San Jose previously provided datasets that included building footprints and land parcels.
+
+The `Basemap_2` ZIP archive used in this example contains a building footprints dataset in Esri shapefile format.
+Its coordinate system is NAD 1983 StatePlane California III FIPS 0403 Feet.
 
 To convert the Esri shapefile into CSV format and then assign UBIDs to the resulting CSV file:
 
 1. `ogr2ogr -s_srs "$(cat Basemap2_201905021152225992/BuildingFootprint.prj)" -t_srs "EPSG:4326" -f CSV BuildingFootprint.csv Basemap2_201905021152225992/BuildingFootprint.shp -lco GEOMETRY=AS_WKT`
-2. `buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="WKT" < BuildingFootprint.csv > BuildingFootprint.out.csv 2> BuildingFootprint.err.csv`
+2. `uv run buildingid append2csv wkt --code-length=11 --fieldname-code="UBID" --fieldname-wktstr="WKT" < BuildingFootprint.csv > BuildingFootprint.out.csv 2> BuildingFootprint.err.csv`
 
 ## License
 
@@ -234,4 +250,4 @@ To convert the Esri shapefile into CSV format and then assign UBIDs to the resul
 ## Contributions
 
 Contributions are accepted on [GitHub](https://github.com/) via the fork and pull request workflow.
-See [here](https://help.github.com/articles/using-pull-requests/) for more information.
+See [GitHub's pull request documentation](https://docs.github.com/en/pull-requests/reference/pull-requests) for more information.

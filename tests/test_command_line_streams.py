@@ -18,18 +18,22 @@ CODE = "6FG22222+22-0-0-0-0"
 
 
 def run_cli(args: list[str], input_data: bytes = b"", *, io_encoding: str = "utf-8:strict") -> subprocess.CompletedProcess[bytes]:
+    env = {
+        **os.environ,
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": io_encoding,
+        "TQDM_DISABLE": "1",
+    }
+    # Captured pipes are not PyCharm's console; otherwise Colorama treats them as terminals.
+    env.pop("PYCHARM_HOSTED", None)
+
     return subprocess.run(  # noqa: S603 -- All arguments are controlled by these tests.
         [sys.executable, "-c", "from buildingid.command_line import cli; cli()", *args],
         input=input_data,
         capture_output=True,
         check=False,
         timeout=30,
-        env={
-            **os.environ,
-            "PYTHONUTF8": "1",
-            "PYTHONIOENCODING": io_encoding,
-            "TQDM_DISABLE": "1",
-        },
+        env=env,
     )
 
 
@@ -93,6 +97,17 @@ def test_append2csv_uses_click_runner_streams():
     assert result.exit_code == 0, result.output
     assert result.stdout_bytes == f"Latitude,Longitude,UBID\r\n0,0,{CODE}\r\n".encode()
     assert result.stderr_bytes == b""
+
+
+def test_cli_subprocess_ignores_pycharm_console_emulation(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("PYCHARM_HOSTED", "1")
+
+    result = run_cli(["append2csv", "latlng", "--code-length=10"], b"Latitude,Longitude\r\n0,0\r\n")
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == f"Latitude,Longitude,UBID\r\n0,0,{CODE}\r\n".encode()
+    assert result.stderr == b""
+    assert os.environ["PYCHARM_HOSTED"] == "1"
 
 
 def test_append2csv_uses_redirected_text_only_streams(monkeypatch: pytest.MonkeyPatch):
