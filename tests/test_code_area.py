@@ -41,6 +41,7 @@ def test_buildingid_code_area_intersection():
 
     bbox = codeArea.intersection(otherCodeArea)
 
+    assert bbox is not None
     assert bbox[0] == -5.0
     assert bbox[1] == -5.0
     assert bbox[2] == 10.0

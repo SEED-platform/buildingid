@@ -52,7 +52,7 @@ class CodeArea(openlocationcode.CodeArea):
             codeLength=self.codeLength,
         )
 
-    def intersection(self, other: "CodeArea") -> tuple[float, float, float, float] | None:
+    def intersection(self, other: "CodeArea | None") -> tuple[float, float, float, float] | None:
         if other is None:
             return None
 
@@ -71,7 +71,10 @@ class CodeArea(openlocationcode.CodeArea):
             latitudeHi,
         )
 
-    def jaccard(self, other: "CodeArea") -> float | None:
+    def jaccard(self, other: "CodeArea | None") -> float | None:
+        if other is None:
+            return None
+
         bbox = self.intersection(other)
 
         if bbox is None:
@@ -95,7 +98,7 @@ class CodeArea(openlocationcode.CodeArea):
         )
 
 
-def decode(code: Code) -> CodeArea:
+def decode(code: Code | str | None) -> CodeArea:
     match = isValid_(code)
 
     if match is None:
@@ -121,7 +124,7 @@ def decode(code: Code) -> CodeArea:
     return CodeArea(codeAreaCenter, latitudeLo, longitudeLo, latitudeHi, longitudeHi, codeAreaCenter.codeLength)
 
 
-def encode(
+def encode(  # noqa: PLR0917
     latitudeLo: float,
     longitudeLo: float,
     latitudeHi: float,
@@ -167,11 +170,11 @@ def encode(
     return Code(FORMAT_STRING_ % (olcCenter, olcCountNorth, olcCountEast, olcCountSouth, olcCountWest))
 
 
-def isValid(code: Code) -> bool:
+def isValid(code: Code | str | None) -> bool:
     return isValid_(code) is not None
 
 
-def isValid_(code: Code) -> typing.Match[str] | None:
+def isValid_(code: Code | str | None) -> typing.Match[str] | None:
     if code is None:
         return None
 

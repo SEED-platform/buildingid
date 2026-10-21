@@ -3,7 +3,6 @@
 #
 # See LICENSE.txt and WARRANTY.txt for details.
 
-
 import shapely.geometry
 import shapely.geometry.point
 import shapely.wkb
@@ -18,6 +17,7 @@ class LatLngDictDecoder(DictDecoder[DictDatum]):
         self,
         fieldname_center_latitude: str,
         fieldname_center_longitude: str,
+        *,
         fieldname_north_latitude: str | None = None,
         fieldname_south_latitude: str | None = None,
         fieldname_west_longitude: str | None = None,
