@@ -53,11 +53,17 @@ class DictPipe:
         io_in: typing.TextIO,
         io_out: typing.TextIO,
         io_err: typing.TextIO,
-        args_in: list = [],
-        kwargs_in: dict = {},
-        args_out: list = [],
-        kwargs_out: dict = {},
+        *,
+        args_in: list[typing.Any] | None = None,
+        kwargs_in: dict[str, typing.Any] | None = None,
+        args_out: list[typing.Any] | None = None,
+        kwargs_out: dict[str, typing.Any] | None = None,
     ) -> None:
+        args_in = [] if args_in is None else args_in
+        kwargs_in = {} if kwargs_in is None else kwargs_in
+        args_out = [] if args_out is None else args_out
+        kwargs_out = {} if kwargs_out is None else kwargs_out
+
         csv_in = csv.DictReader(io_in, *args_in, **kwargs_in)
 
         fieldnames_in = csv_in.fieldnames

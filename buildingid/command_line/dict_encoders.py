@@ -17,8 +17,8 @@ class BaseGeometryDictEncoder(DictEncoder[DictDatum]):
 
         self.code_length = code_length
 
-    def encode(self, datum: DictDatum) -> dict[str, typing.Any]:
-        code = datum.encode(codeLength=self.code_length)
+    def encode(self, inst: DictDatum) -> dict[str, typing.Any]:
+        code = inst.encode(codeLength=self.code_length)
 
         row = {}
 
@@ -39,11 +39,11 @@ class ErrorDictEncoder(DictEncoder[BaseException]):
 
         self.fieldname_code = fieldname_code
 
-    def encode(self, exception: BaseException) -> dict[str, typing.Any]:
+    def encode(self, inst: BaseException) -> dict[str, typing.Any]:
         row = {}
 
-        row[f"{self.fieldname_code}_Error_Name"] = type(exception).__name__
-        row[f"{self.fieldname_code}_Error_Message"] = str(exception)
+        row[f"{self.fieldname_code}_Error_Name"] = type(inst).__name__
+        row[f"{self.fieldname_code}_Error_Message"] = str(inst)
 
         return row
 

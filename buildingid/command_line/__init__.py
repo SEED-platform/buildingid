@@ -5,15 +5,17 @@
 
 import importlib.metadata
 import logging
+import sys
 import typing
 
 import click
 import click_log
 import pandas as pd
 import pyqtree
-from tldm import pandas, tldm
+from tqdm import tqdm
 
 from buildingid.code import Code, CodeArea, decode
+from buildingid.command_line.csv_stream import csv_text_stream
 from buildingid.command_line.dict_decoders import LatLngDictDecoder, WKBDictDecoder, WKTDictDecoder
 from buildingid.command_line.dict_encoders import BaseGeometryDictEncoder, ErrorDictEncoder
 from buildingid.command_line.dict_pipe import DictDecoder, DictPipe
@@ -21,7 +23,7 @@ from buildingid.command_line.exceptions import CustomError, FieldNotFoundError, 
 from buildingid.command_line.set_csv_field_size_limit import set_csv_field_size_limit
 from buildingid.validators import isValidCodeLength
 
-pandas()
+tqdm.pandas()
 
 VERSION = importlib.metadata.version("buildingid")
 logger = logging.getLogger(__name__)
@@ -32,7 +34,7 @@ click_log.basic_config(logger)
 set_csv_field_size_limit()
 
 
-def click_callback_code_length_(ctx: None, opt: click.core.Option, codeLength: int) -> int:
+def click_callback_code_length_(ctx: click.Context, opt: click.Parameter, codeLength: int) -> int:
     """Callback for "--code-length" option (the number of digits in the OLC segment of the UBID string).
 
     See `buildingid.validators.isValidCodeLength` for details.
@@ -47,7 +49,7 @@ def click_callback_code_length_(ctx: None, opt: click.core.Option, codeLength: i
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 @click.pass_context
 @click.version_option(VERSION)
-def cli(ctx: None) -> None:
+def cli(ctx: click.Context) -> None:
     """Unique Building Identifier (UBID) Software (Battelle IPID 31307-E)
 
     Unique Building Identifier (UBID) pinpoints the exact physical location and extent of space that a building occupies.
@@ -145,8 +147,8 @@ def cli(ctx: None) -> None:
     help="the character used to denote the start and end of a quoted field in the output file",
 )
 @click.pass_context
-def run_append_to_csv(
-    ctx: None,
+def run_append_to_csv(  # noqa: PLR0917
+    ctx: click.Context,
     dict_decoder_id: str,
     code_length: int,
     fieldname_south_latitude: str,
@@ -209,11 +211,6 @@ def run_append_to_csv(
     # Construct `DictPipe` for standard input, output and error streams.
     dict_pipe = DictPipe(decoder_in, encoder_out, encoder_err)
 
-    # Standard input, output and error streams.
-    io_in = click.get_text_stream("stdin")
-    io_out = click.get_text_stream("stdout")
-    io_err = click.get_text_stream("stderr")
-
     # Configuration for `csv.DictReader`.
     args_in: list = []
     kwargs_in = {
@@ -230,9 +227,14 @@ def run_append_to_csv(
     }
 
     try:
-        dict_pipe.run(io_in, io_out, io_err, args_in=args_in, kwargs_in=kwargs_in, args_out=args_out, kwargs_out=kwargs_out)
-    except CustomError as exception:
-        raise click.ClickException(exception)
+        with (
+            csv_text_stream(sys.stdin) as io_in,
+            csv_text_stream(sys.stdout) as io_out,
+            csv_text_stream(sys.stderr) as io_err,
+        ):
+            dict_pipe.run(io_in, io_out, io_err, args_in=args_in, kwargs_in=kwargs_in, args_out=args_out, kwargs_out=kwargs_out)
+    except (CustomError, OSError, UnicodeError) as exception:
+        raise click.ClickException(str(exception)) from exception
 
     # Done!
 
@@ -411,8 +413,8 @@ def run_append_to_csv(
     help="the character used to denote the start and end of a quoted field in the output file",
 )
 @click.pass_context
-def run_crossref(
-    ctx: None,
+def run_crossref(  # noqa: PLR0917
+    ctx: click.Context,
     left: typing.TextIO,
     right: typing.TextIO,
     dst: typing.TextIO,
@@ -515,8 +517,9 @@ def run_crossref(
         # Ensure that "UBID" field is present and that "index" and "__openlocationcode__" fields are not present.
         #
         # Finally, construct 'pd.Series' for 'CodeArea' by decoding "UBID" field.
-        logger.info(f"[crossref] Reading left input file: {left.name!r}")
-        left_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=left, **kwargs_for_read_csv_left)
+        logger.info(f"[crossref] Reading left input file: {getattr(left, 'name', '<stdin>')!r}")
+        with csv_text_stream(left) as io_left:
+            left_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=io_left, **kwargs_for_read_csv_left)
         if left_fieldname_code not in left_data_frame:
             raise FieldNotFoundError(left_fieldname_code)
         elif left_fieldname_index_with_suffix in left_data_frame:
@@ -533,8 +536,9 @@ def run_crossref(
         # Ensure that "UBID" field is present and that "index" and "__openlocationcode__" fields are not present.
         #
         # Finally, construct 'pd.Series' for 'CodeArea' by decoding "UBID" field.
-        logger.info(f"[crossref] Reading right input file: {right.name!r}")
-        right_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=right, **kwargs_for_read_csv_right)
+        logger.info(f"[crossref] Reading right input file: {getattr(right, 'name', '<stdin>')!r}")
+        with csv_text_stream(right) as io_right:
+            right_data_frame: pd.DataFrame = pd.read_csv(filepath_or_buffer=io_right, **kwargs_for_read_csv_right)
         if right_fieldname_code not in right_data_frame:
             raise FieldNotFoundError(right_fieldname_code)
         elif right_fieldname_index_with_suffix in right_data_frame:
@@ -562,7 +566,7 @@ def run_crossref(
                     left_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeHi).max(),
                 ],
             )
-            for left_index, left_codeArea in tldm(left_series_codeArea.items(), total=len(left_series_codeArea)):
+            for left_index, left_codeArea in tqdm(left_series_codeArea.items(), total=len(left_series_codeArea)):
                 if left_codeArea is not None:
                     left_spindex.insert(
                         item=(left_index, left_codeArea),
@@ -572,7 +576,7 @@ def run_crossref(
             logger.info("[crossref] Cross-referencing rows of right input file against quadtree for left input file")
             dst_data = [
                 (left_index, right_index, left_codeArea, right_codeArea)
-                for right_index, right_codeArea in tldm(right_series_codeArea.items(), total=len(right_series_codeArea))
+                for right_index, right_codeArea in tqdm(right_series_codeArea.items(), total=len(right_series_codeArea))
                 if right_codeArea is not None
                 for (left_index, left_codeArea) in left_spindex.intersect(
                     [right_codeArea.longitudeLo, right_codeArea.latitudeLo, right_codeArea.longitudeHi, right_codeArea.latitudeHi],
@@ -593,7 +597,7 @@ def run_crossref(
                     right_series_codeArea.progress_apply(lambda codeArea: codeArea.latitudeHi).max(),
                 ],
             )
-            for right_index, right_codeArea in tldm(right_series_codeArea.items(), total=len(right_series_codeArea)):
+            for right_index, right_codeArea in tqdm(right_series_codeArea.items(), total=len(right_series_codeArea)):
                 if right_codeArea is not None:
                     right_spindex.insert(
                         item=(right_index, right_codeArea),
@@ -603,7 +607,7 @@ def run_crossref(
             logger.info("[crossref] Cross-referencing rows of left input file against quadtree for right input file")
             dst_data = [
                 (left_index, right_index, left_codeArea, right_codeArea)
-                for left_index, left_codeArea in tldm(left_series_codeArea.items(), total=len(left_series_codeArea))
+                for left_index, left_codeArea in tqdm(left_series_codeArea.items(), total=len(left_series_codeArea))
                 if left_codeArea is not None
                 for (right_index, right_codeArea) in right_spindex.intersect(
                     [left_codeArea.longitudeLo, left_codeArea.latitudeLo, left_codeArea.longitudeHi, left_codeArea.latitudeHi],
@@ -724,10 +728,11 @@ def run_crossref(
             del dst_data_frame[right_fieldname_index_with_suffix]
 
         # Write output file.
-        logger.info(f"[crossref] Writing output file: {dst.name!r}")
-        dst_data_frame.to_csv(path_or_buf=dst, header=True, index=False, **kwargs_for_to_csv_dst)
+        logger.info(f"[crossref] Writing output file: {getattr(dst, 'name', '<stdout>')!r}")
+        with csv_text_stream(dst) as io_dst:
+            dst_data_frame.to_csv(path_or_buf=io_dst, header=True, index=False, **kwargs_for_to_csv_dst)
     except BaseException as exception:
-        raise click.ClickException(exception)
+        raise click.ClickException(str(exception))
 
     # Done!
     return
